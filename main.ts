@@ -5,14 +5,14 @@ import { linkToMarkdown } from './src/linkToMarkdown.js';
 
 // Remember to rename these classes and interfaces!
 
-interface MyPluginSettings {
+interface LinkFormatPluginSettings {
 	mySetting: string;
 	archiveLinks: boolean;
 	icons: any; // object of type: icon
 	urls: any; // object of urlMatch: type
 }
 
-const DEFAULT_SETTINGS: MyPluginSettings = {
+const DEFAULT_SETTINGS: LinkFormatPluginSettings = {
 	mySetting: 'default',
 	archiveLinks: false,
 	icons: {
@@ -28,8 +28,8 @@ const DEFAULT_SETTINGS: MyPluginSettings = {
 	},
 }
 
-export default class MyPlugin extends Plugin {
-	settings: MyPluginSettings;
+export default class LinkFormatPlugin extends Plugin {
+	settings: LinkFormatPluginSettings;
 
 	async onload() {
 		await this.loadSettings();
@@ -98,7 +98,7 @@ export default class MyPlugin extends Plugin {
 		});
 
 		// This adds a settings tab so the user can configure various aspects of the plugin
-		this.addSettingTab(new SampleSettingTab(this.app, this));
+		this.addSettingTab(new LinkFormatSettingTab(this.app, this));
 
 		// // If the plugin hooks up any global DOM events (on parts of the app that doesn't belong to this plugin)
 		// // Using this function will automatically remove the event listener when this plugin is disabled.
@@ -129,12 +129,12 @@ export default class MyPlugin extends Plugin {
 }
 
 class LinkAssignmentModal extends Modal {
-	plugin: MyPlugin;
+	plugin: LinkFormatPlugin;
 	inputURL: string;
 
 	type: string = '';
 
-	constructor(app: App, plugin: MyPlugin, inputURL: string) {
+	constructor(app: App, plugin: LinkFormatPlugin, inputURL: string) {
 		super(app);
 		this.plugin = plugin;
 		this.inputURL = inputURL;
@@ -176,11 +176,11 @@ class LinkAssignmentModal extends Modal {
 }
 
 class SettingsLinkAssignmentModal extends Modal {
-	plugin: MyPlugin;
+	plugin: LinkFormatPlugin;
 
 	url: string;
 
-	constructor(plugin: MyPlugin, url: string) {
+	constructor(plugin: LinkFormatPlugin, url: string) {
 		super(app);
 		this.plugin = plugin;
 		this.url = url;
@@ -233,10 +233,10 @@ class SettingsLinkAssignmentModal extends Modal {
 	}
 }
 
-class SampleSettingTab extends PluginSettingTab {
-	plugin: MyPlugin;
+class LinkFormatSettingTab extends PluginSettingTab {
+	plugin: LinkFormatPlugin;
 
-	constructor(app: App, plugin: MyPlugin) {
+	constructor(app: App, plugin: LinkFormatPlugin) {
 		super(app, plugin);
 		this.plugin = plugin;
 	}
