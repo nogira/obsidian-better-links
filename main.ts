@@ -1,9 +1,13 @@
+/*
+
+RUN:
+pnpm run dev
+
+*/
+
 import { App, Editor, MarkdownView, Modal, Notice, Plugin, PluginSettingTab, Setting } from 'obsidian';
-import { clipboard } from "electron";
 
 import { linkToMarkdown } from './src/linkToMarkdown.js';
-
-// Remember to rename these classes and interfaces!
 
 interface LinkFormatPluginSettings {
 	mySetting: string;
@@ -25,6 +29,7 @@ const DEFAULT_SETTINGS: LinkFormatPluginSettings = {
 	urls: {
 		'youtube.com/': 'video',
 		'quantamagazine.org/': 'article',
+		'twitter.com/': 'tweet',
 	},
 }
 
@@ -37,18 +42,22 @@ export default class LinkFormatPlugin extends Plugin {
 		this.addCommand({
 			id: 'format-link',
 			name: 'Format link',
-			hotkeys: [{
-				modifiers: ['Mod'],
-				key: '0',
-			}],
+			// hotkeys: [{
+			// 	modifiers: ['Mod'],
+			// 	key: '0',
+			// }],
 			editorCallback: async (editor: Editor, view: MarkdownView) => {
+
+				// console.log(editor)
+				// editor.lastLine()
+
 				// try-catch so user knows if it fails and doesn't sit around 
 				// waiting 10sec thinking its just taking a long time to load
 				try {
-					const inputURL = clipboard.readText();
+					const inputURL = await navigator.clipboard.readText()
 
 					// CHECK URL IS VALID URL, IF NOT NOTIFY AND END FUNCTION
-					if (! inputURL.match(/^https?:\/\/[^ "]+$/)) {
+					if (! /^https?:\/\/[^ "]+$/.test(inputURL)) {
 						new Notice('URL invalid');
 						return
 					}
@@ -68,17 +77,17 @@ export default class LinkFormatPlugin extends Plugin {
 						//                                 pass in app, plugin, url
 						const modal = new LinkAssignmentModal(this.app, this, inputURL);
 						modal.onClose = async () => {
-							console.log('modal closed');
+							// console.log('modal closed');
 							type = modal.type;
+							// console.log(type);
 
-							console.log(type);
 							// this is a check just in case a button wasn't 
 							// clicked in the popup
 							if (type) {
 								// get the emoji
 								const emoji = this.settings.icons[type];
 								// create and return the formatted link text
-								const output = await linkToMarkdown(inputURL, type, emoji);
+								const output = await linkToMarkdown(inputURL, type, emoji, this.settings);
 								editor.replaceSelection(output);
 							}
 						}
@@ -87,7 +96,7 @@ export default class LinkFormatPlugin extends Plugin {
 						// get the emoji
 						const emoji = this.settings.icons[type];
 						// create and return the formatted link text
-						const output = await linkToMarkdown(inputURL, type, emoji);
+						const output = await linkToMarkdown(inputURL, type, emoji, this.settings);
 						editor.replaceSelection(output);
 					}
 				} catch (e) {
@@ -254,7 +263,7 @@ class LinkFormatSettingTab extends PluginSettingTab {
 			.addToggle(toggle => toggle
 				.setValue(this.plugin.settings.archiveLinks)
 				.onChange(async (value) => {
-					console.log('archive: ' + value);
+					// console.log('archive: ' + value);
 					this.plugin.settings.archiveLinks = value;
 					await this.plugin.saveSettings();
 				}));
@@ -272,7 +281,7 @@ class LinkFormatSettingTab extends PluginSettingTab {
 					.setPlaceholder('emoji(s)')
 					.setValue(this.plugin.settings.icons[key])
 					.onChange(async (value) => {
-						console.log('Secret: ' + value);
+						// console.log('Secret: ' + value);
 						this.plugin.settings.icons[key] = value;
 						await this.plugin.saveSettings();
 					}));

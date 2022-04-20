@@ -1,7 +1,7 @@
-import { getTweets, tweetsFromURL } from "/Users/home/myDenoFuncs/twitterAPI.js"
+import { tweetsFromURL } from "./twitterAPI.js";
 import { requestUrl } from 'obsidian';
 
-export async function linkToMarkdown(inputURL, type, emoji) {
+export async function linkToMarkdown(inputURL, type, emoji, settings) {
     //replace http with https
     inputURL = inputURL.replace(/^http(?!s)/, "https");
     
@@ -9,9 +9,12 @@ export async function linkToMarkdown(inputURL, type, emoji) {
     // console.log(type);
     // console.log(emoji);
 
+    // settings
+    const doGetArchive = settings.archiveLinks;
+
     switch (type) {
         case "tweet": {
-            return await getFormattedTweets(inputURL, emoji);
+            return await getFormattedTweets(inputURL, emoji, doGetArchive);
         }
 
         case "video": {
@@ -29,16 +32,21 @@ export async function linkToMarkdown(inputURL, type, emoji) {
         }
 
         case "forum": {
-            const [title, outputURL] = await Promise.all([
-                getTitle(inputURL)
-                    .then((t) => {
-                        if (/reddit\.com/.test(inputURL)) {
-                            return t.replace(/ : \w+$/, '');
-                        }
-                        return t;
-                    }),
-                getArchivedUrl(inputURL)
-            ]);
+            let title, outputURL;
+            if (doGetArchive) {
+                [title, outputURL] = await Promise.all([
+                    getTitle(inputURL),
+                    getArchivedUrl(inputURL),
+                ]);
+            } else {
+                title = await getTitle(inputURL);
+                outputURL = inputURL;
+            }
+
+            if (/reddit\.com/.test(inputURL)) {
+                title =  title.replace(/ : \w+$/, '');
+            }
+
             return `${emoji} [${title}](${outputURL})`;
         }
 
@@ -46,23 +54,46 @@ export async function linkToMarkdown(inputURL, type, emoji) {
         case "paper":
         default: {
             // console.log("article/paper/default");
-            const [title, outputURL] = await Promise.all([
-                getTitle(inputURL), getArchivedUrl(inputURL)
-            ]);
+            let title, outputURL;
+            if (doGetArchive) {
+                [title, outputURL] = await Promise.all([
+                    getTitle(inputURL),
+                    getArchivedUrl(inputURL),
+                ]);
+            } else {
+                title = await getTitle(inputURL);
+                outputURL = inputURL;
+            }
             return `${emoji} [${title}](${outputURL})`;
         }
     }
 }
 
-async function getFormattedTweets(inputURL, emoji) {
+async function getFormattedTweets(inputURL, emoji, doGetArchive) {
+
+    const obsidianConfig = app.vault.config;
+    let leftSideSpacing;
+    if (obsidianConfig.useTab) {
+        leftSideSpacing = "\t";
+    } else {
+        leftSideSpacing = " ".repeat(obsidianConfig.tabSize);
+    }
+
     const user = inputURL.split('/')[3];
     const id = inputURL.split('/')[5];
     
     // -- NEW --
-    const [outputURL, tweets] = await Promise.all([
-        getArchivedUrl(inputURL),
-        tweetsFromURL(inputURL)
-    ]);
+    let outputURL, tweets;
+    if (doGetArchive) {
+        [outputURL, tweets] = await Promise.all([
+            getArchivedUrl(inputURL),
+            tweetsFromURL(inputURL),
+        ]);
+    } else {
+        outputURL = inputURL;
+        tweets = await tweetsFromURL(inputURL);
+    }
+
     let tweet = "";
     for (const t of tweets) {
         let text = t.text;
@@ -94,21 +125,21 @@ async function getFormattedTweets(inputURL, emoji) {
         // add \ to front of # to prevent obsidian recognizing it as start of tag
         text = text.replace(/#/gm, "\\#");
         // add quote marks to text
-        text = text.replace(/^/gm, "\t> ");
+        text = text.replace(/^/gm, `${leftSideSpacing}> `);
         // remove spaces at end of line
         text = text.replace(/ +?$/gm, "");
         text = translateURLs(text, t);
         // (e.g. &amp; -> &)
         text = decodeHtmlEntities(text);
 
-        tweet += `${text}\n\n`;
+        tweet += `\n${text}\n`;
     }
     // -- OLD -- (keep in case twitter API breaks)
     // using outputURL bc cant get title from twitter inputURL to be able to get tweet text
     // const outputURL = await getArchivedUrl(inputURL);
     // const tweet = await getTitle(outputURL)
     //                 .then(t => t?.replace(/^.*?"|"[^"]*?$/g, ''));
-    return `${emoji} [@${user} ${id}](${outputURL})\n${tweet}`;
+    return `${emoji} [@${user} ${id}](${outputURL})${tweet}`;
 }
 
 async function getArchivedUrl(url) {
