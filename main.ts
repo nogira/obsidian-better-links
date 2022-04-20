@@ -48,8 +48,8 @@ export default class LinkFormatPlugin extends Plugin {
 			// }],
 			editorCallback: async (editor: Editor, view: MarkdownView) => {
 
-				// console.log(editor)
-				// editor.lastLine()
+				console.log(editor)
+				console.log(editor.lastLine())
 
 				// try-catch so user knows if it fails and doesn't sit around 
 				// waiting 10sec thinking its just taking a long time to load
@@ -255,7 +255,7 @@ class LinkFormatSettingTab extends PluginSettingTab {
 
 		containerEl.empty();
 
-		containerEl.createEl('h2', {text: 'Settings for my awesome plugin.'});
+		
 
 		new Setting(containerEl)
 			.setName('Archive Link')
@@ -269,10 +269,19 @@ class LinkFormatSettingTab extends PluginSettingTab {
 				}));
 
 
+		
+
 
 		// CHANGE THIS TO SAME AS ONE BELOW SO CAN FREELY ADD DIFFERENT TYPES
 
+		
 
+		containerEl.createEl('h2', {
+			text: 'Link Types',
+			attr: {
+				style: "margin-top: 30px;"
+			},
+		});
 		Object.keys(this.plugin.settings.icons).forEach((key, idx) => {
 			new Setting(containerEl)
 				.setName(key + ' emoji')
@@ -287,21 +296,12 @@ class LinkFormatSettingTab extends PluginSettingTab {
 					}));
 		});
 
-
-		containerEl.createEl('h3', {
-			text: "Assigned URLs", attr: {
-				style: "margin-bottom: 0"
-			}
+		containerEl.createEl('h2', {
+			text: 'Assigned URLs',
+			attr: {
+				style: "margin-top: 30px;"
+			},
 		});
-		// const desc = containerEl.createEl("p", { cls: "setting-item-description" });
-		// desc.append(
-		// 	"Set the Colors for your Charts. This will set the border Color and the inner Color will be the same, but with less opacity. This ensures better compatibility with Dark and Light Mode. ",
-		// 	"You can use any ",
-		// 	desc.createEl("a", {
-		// 		href: "https://www.w3schools.com/cssref/css_colors.asp",
-		// 		text: "valid CSS Color."
-		// 	}),
-		// )
 		Object.keys(this.plugin.settings.urls).forEach((key, idx) => {
 			const url = key;
 
