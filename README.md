@@ -1,4 +1,8 @@
-## Obsidian link formater
+
+<h1 align="center">
+  Obsidian link formatter
+</h1>
+
 
 Plugin for [Obsidian](https://obsidian.md).
 
@@ -11,3 +15,9 @@ That simple.
 <br>
 
 Note: It can take a few seconds to load the output. So you're not waiting for it to load if the code fails for some reason, a message will pop-up in the top right of obsidian if the code fails.
+
+<br>
+
+<h2 align="center">
+  <a href="https://nogira.github.io/generate/donate.html" ><b>Support Me 🌞</b></a>
+</h2>
