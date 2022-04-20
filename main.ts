@@ -9,7 +9,7 @@ import { App, Editor, MarkdownView, Modal, Notice, Plugin, PluginSettingTab, Set
 
 import { linkToMarkdown } from './src/linkToMarkdown.js';
 
-interface LinkFormatPluginSettings {
+export interface LinkFormatPluginSettings {
 	mySetting: string;
 	archiveLinks: boolean;
 	icons: any; // object of type: icon

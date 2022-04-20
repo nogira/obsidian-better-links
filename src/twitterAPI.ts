@@ -16,7 +16,7 @@ async function getGuestToken() {
     return obj?.guest_token;
 }
 
-export async function getTweets(tweetID, includeRecommendedTweets = false) {
+export async function getTweets(tweetID: string, includeRecommendedTweets: boolean = false) {
     const variables = {
         "focalTweetId":tweetID,
         "with_rux_injections":includeRecommendedTweets, // true = include recommended tweets
@@ -52,8 +52,8 @@ export async function getTweets(tweetID, includeRecommendedTweets = false) {
     return tweets;
 }
 
-function parseTweetContents(tweetContents) {
-    const mainTweet = {}
+function parseTweetContents(tweetContents: any) {
+    const mainTweet: any = {}
 
     mainTweet.id = tweetContents.legacy.id_str;
     mainTweet.user = tweetContents.core.user_results.result.legacy.screen_name;
@@ -63,7 +63,7 @@ function parseTweetContents(tweetContents) {
     if (media) {
         mainTweet.media = []
         for (const img of media) {
-            const item = {}
+            const item: any = {}
             item.twitterLink = img.url;
             item.url = img.media_url_https;
             item.type = img.type; // photo or video
@@ -74,7 +74,7 @@ function parseTweetContents(tweetContents) {
     if (urls.length > 0) {
         mainTweet.urls = [];
         for (const url of urls) {
-            const item = {}
+            const item: any = {}
             item.twitterLink = url.url;
             item.url = url.expanded_url;
             mainTweet.urls.push(item);
@@ -91,7 +91,7 @@ function parseTweetContents(tweetContents) {
     return mainTweet;
 }
 
-export async function tweetsFromURL(url) {
+export async function tweetsFromURL(url: string) {
     /*
     get the tweets in a parsed format (most of the junk removed)
 
