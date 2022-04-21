@@ -116,43 +116,51 @@ export async function tweetsFromURL(url: string) {
     const url_id = url.split("/")[5];
     const tweets = await getTweets(url_id);
     const allTweets = [];
+
     // -- find main tweet --
     // need to do this bc even though usually the top furst tweet is the main 
     // tweet, if the tweet is halfway down a thread it wont be the first tweet
-    let i;
+    let i: number;
     for (i=0; i < tweets.length; i++) {
-        const tweet = tweets[i];
-        const entryId = tweet.entryId;
-        const id = entryId.substring(6, entryId.length);
+        const entryId = tweets[i].entryId;
+        // "tweet-1516856286738598375" -> "1516856286738598375"
+        const id = entryId.substring(6);
         if (id === url_id) {
             break;
         }
     }
-
+    // -- get main tweet --
+    let mainTweetUser;
     {
         const tweet = tweets[i];
         const tweetContents = tweet.content.itemContent.tweet_results.result
         const mainTweet = parseTweetContents(tweetContents)
         allTweets.push(mainTweet);
+        mainTweetUser = mainTweet.user;
     }
-    // only get thread if main tweet is first tweet
 
-
-
-
-
-    // 🚨🚨🚨🚨 ACTUALLY, ONLY GET THREAD IF ITS THE FIRST TWEET, OR IF THE TWEET RIGHT 
+    // 🚨🚨🚨🚨 ONLY GET THREAD IF ITS THE FIRST TWEET, OR IF THE TWEET RIGHT 
     // ABOVE IT IS A DIFFERENT USER
-
-
-
-
-
-    if (i === 0) {
-        const tweetThread = tweets[1];
+    // in other words, if the main tweet is in the middle of a thread, don't get
+    // the thread
+    const mainIsFirstTweet = i === 0;
+    let prevTweetNotSameUser: boolean;
+    if (! mainIsFirstTweet) {
+        const prevTweetUser = (parseTweetContents(
+                tweets[i-1].content.itemContent.tweet_results.result
+            )).user;
+        prevTweetNotSameUser = prevTweetUser !== mainTweetUser;
+    } console.log("ONE")
+    if (mainIsFirstTweet || prevTweetNotSameUser) {
+        const tweetThread = tweets[i + 1];
         const tweetThreadItems = tweetThread.content.items;
         for (const tweetItem of tweetThreadItems) {
-            const tweetContents = tweetItem.item.itemContent.tweet_results.result;
+            const tweetContents = tweetItem.item.itemContent.tweet_results?.result;
+            // if the tweetItem is a "Show more" button, it has no .result, so 
+            // above will return null. if null, it's not a tweet, so break
+            if (tweetContents === undefined) {
+                break;
+            }
             const tweet = parseTweetContents(tweetContents);
             // check if tweet is in thread, if not then it is a reply so exit
             if (tweet.user !== allTweets[0].user) {
