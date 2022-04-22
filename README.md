@@ -18,6 +18,21 @@ _Note_: It can take a few seconds to load the output. A message will pop-up in t
 
 <br>
 
+### Formatted link examples:
+
+- 📹 [How to OVER Engineer a Website // What is a Tech Stack?](https://www.youtube.com/watch?v=Sxxw3qtb3_g)
+
+- 📰 [Svelte vs React: Ending the Debate](http://web.archive.org/web/20211015215334/https://massivepixel.io/blog/svelte-vs-react/)
+
+- 💬 [1000 consecutive days of using Anki to study advanced organic chemistry (among other things!)](https://web.archive.org/web/20210828162032/https://www.reddit.com/r/Anki/comments/om9zo6/1000_consecutive_days_of_using_anki_to_study/)
+
+- 🔬 [Improving Students’ Learning With Effective Learning Techniques: Promising Directions From Cognitive and Educational Psychology](https://sci-hub.se/10.1177/1529100612453266)
+
+- 🐦 [@WarronBebster 1442902148551901187](http://web.archive.org/web/20220119063529/https://twitter.com/WarronBebster/status/1442902148551901187)
+	> Some big news — we're partnering with @OpenAI to bring Codex features to @Replit. We're starting today with generated code explanations. Learn more here: https://blog.replit.com/codex
+
+<br>
+
 <h2 align="center">
   <a href="https://nogira.github.io/generate/donate.html" ><b>Support Me 🌞</b></a>
 </h2>
