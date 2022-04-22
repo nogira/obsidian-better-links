@@ -1,10 +1,10 @@
 
 <h1 align="center">
-  Obsidian betters links
+  Obsidian better links
 </h1>
 
 
-Plugin for [Obsidian](https://obsidian.md).
+Plugin for [Obsidian](https://obsidian.md). Aims to automate linking to webpages and their content (there was a lot of unnecessary repetition).
 
 ## 1. Link formatting
 1. Copy url (e.g. `https://www.youtube.com/watch?v=cdZZpaB2kDM`).
@@ -28,7 +28,14 @@ _Note_: It can take a few seconds to load the output. A message will pop-up in t
 
 _(Supports twitter threads too as long as they're not so long they have a "show more" button)_
 
-## 2. Multi-paragraph quoting
+## 2. Use archived version of url to prevent deadlinks
+
+You copy a url, but the url used in the formatted link contains an an archived url instead:
+- Copy: https://realpython.com/python-matplotlib-guide/
+- Used: https://web.archive.org/web/20220303135642/https://realpython.com/python-matplotlib-guide/
+
+
+## 3. Multi-paragraph quoting
 
 Usually when you paste multi-paragraph text on a `> `, the first paragraph has the quote, and the quote's indentation, but every paragraph after that have no `> `, nor indentation. This plugin automatically adds it when pasting.
 
