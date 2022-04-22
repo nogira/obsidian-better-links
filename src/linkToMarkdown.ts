@@ -229,9 +229,9 @@ async function getTitle(url: string) {
         .then(r => r.text)
         // no need to parse whole html just to get title value
         .then(t => {
-            console.log(t);
+            // console.log(t);
             let title = t.match(/(?<=<title[^>]*>)(.*?)(?=<\/title>)/gs)?.[0];
-            console.log(title);
+            // console.log(title);
             // don't want new line in title
             title = title.replace(/\n|\r/g, '');
             // remove whitespace from start and end
