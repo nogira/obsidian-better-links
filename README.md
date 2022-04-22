@@ -14,7 +14,7 @@ That simple.
 
 <br>
 
-Note: It can take a few seconds to load the output. So you're not waiting for it to load if the code fails for some reason, a message will pop-up in the top right of obsidian if the code fails.
+_Note_: It can take a few seconds to load the output. A message will pop-up in the top right of obsidian if the code fails to format the link. This prevents you from waiting unnecessarily for an output that never comes.
 
 <br>
 
