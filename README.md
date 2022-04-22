@@ -4,7 +4,7 @@
 </h1>
 
 
-Plugin for [Obsidian](https://obsidian.md). Aims to automate linking to webpages and their content (there was a lot of unnecessary repetition).
+Plugin for [Obsidian](https://obsidian.md). Aims to minimize the time-drain of linking to webpages and quoting their content.
 
 ## 1. Link formatting
 1. Copy url (e.g. `https://www.youtube.com/watch?v=cdZZpaB2kDM`).
