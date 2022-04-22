@@ -5,9 +5,7 @@ pnpm run dev
 
 */
 
-import { Console } from 'console';
 import { App, Editor, MarkdownView, Modal, Notice, Plugin, PluginSettingTab, Setting } from 'obsidian';
-
 import { linkToMarkdown } from './src/linkToMarkdown.js';
 
 export interface LinkFormatPluginSettings {
@@ -314,7 +312,7 @@ class LinkFormatSettingTab extends PluginSettingTab {
 		});
 		Object.keys(this.plugin.settings.icons).forEach((key, idx) => {
 			new Setting(containerEl)
-				.setName(key + ' emoji')
+				.setName(key[0].toUpperCase() + key.substring(1) + ' emoji')
 				// .setDesc('It\'s a secret')
 				.addText(text => text
 					.setPlaceholder('emoji(s)')
