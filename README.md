@@ -1,6 +1,6 @@
 
 <h1 align="center">
-  Obsidian betters links
+  Obsidian better links
 </h1>
 
 
