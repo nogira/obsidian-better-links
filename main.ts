@@ -9,14 +9,12 @@ import { App, Editor, MarkdownView, Modal, Notice, Plugin, PluginSettingTab, Set
 import { linkToMarkdown } from './src/linkToMarkdown.js';
 
 export interface LinkFormatPluginSettings {
-	mySetting: string;
 	archiveLinks: boolean;
 	icons: any; // object of type: icon
 	urls: any; // object of urlMatch: type
 }
 
 const DEFAULT_SETTINGS: LinkFormatPluginSettings = {
-	mySetting: 'default',
 	archiveLinks: false,
 	icons: {
 		article: '📰',
@@ -148,7 +146,7 @@ export default class LinkFormatPlugin extends Plugin {
 	}
 
 	onunload() {
-
+		// this.unregisterMarkdownPostProcessor((parseSubscript: MarkdownPostProcessor) => {})
 	}
 
 	async loadSettings() {
