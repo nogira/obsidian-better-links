@@ -5,6 +5,7 @@ pnpm run dev
 
 */
 
+import { Console } from 'console';
 import { App, Editor, MarkdownView, Modal, Notice, Plugin, PluginSettingTab, Setting } from 'obsidian';
 
 import { linkToMarkdown } from './src/linkToMarkdown.js';
@@ -39,6 +40,43 @@ export default class LinkFormatPlugin extends Plugin {
 	async onload() {
 		await this.loadSettings();
 
+		// this.addCommand({
+		// 	id: 'get-editor',
+		// 	name: 'get editor',
+		// 	hotkeys: [{
+		// 		modifiers: ['Mod'],
+		// 		key: '9',
+		// 	}],
+		// 	editorCallback: async (editor: Editor, view: MarkdownView) => {
+
+		// 		// console.log("editor")
+		// 		// console.log(editor)
+		// 		// console.log("editor.lastLine()")
+		// 		// console.log(editor.lastLine())
+		// 		console.log("editor.getCursor()")
+		// 		console.log(editor.getCursor())
+		// 		// console.log("view")
+		// 		// console.log(view)
+		// 		function getTextBeforeCursor(editor: Editor) {
+		// 			const cursor = editor.getCursor();
+		// 			const textBeforeCursor = editor.getRange(
+		// 				{ line: cursor.line, ch: 0 },
+		// 				cursor
+		// 			);
+		// 			return textBeforeCursor;
+		// 		}
+				
+		// 		console.log("textBeforeCursor")
+		// 		console.log(getTextBeforeCursor(editor))
+
+		// 		// if text before cursur is the same as the full text of the 
+		// 		// line, then it is viable for checking if it's a quote
+
+
+		// 	}
+		// });
+
+
 		this.addCommand({
 			id: 'format-link',
 			name: 'Format link',
@@ -47,9 +85,9 @@ export default class LinkFormatPlugin extends Plugin {
 			// 	key: '0',
 			// }],
 			editorCallback: async (editor: Editor, view: MarkdownView) => {
-
-				console.log(editor)
-				console.log(editor.lastLine())
+				// immediately delete current selection if any so that cursor 
+				// position is not affected by random text
+				editor.replaceSelection('');
 
 				// try-catch so user knows if it fails and doesn't sit around 
 				// waiting 10sec thinking its just taking a long time to load
@@ -87,7 +125,7 @@ export default class LinkFormatPlugin extends Plugin {
 								// get the emoji
 								const emoji = this.settings.icons[type];
 								// create and return the formatted link text
-								const output = await linkToMarkdown(inputURL, type, emoji, this.settings);
+								const output = await linkToMarkdown(inputURL, type, emoji, this.settings, editor);
 								editor.replaceSelection(output);
 							}
 						}
@@ -96,7 +134,7 @@ export default class LinkFormatPlugin extends Plugin {
 						// get the emoji
 						const emoji = this.settings.icons[type];
 						// create and return the formatted link text
-						const output = await linkToMarkdown(inputURL, type, emoji, this.settings);
+						const output = await linkToMarkdown(inputURL, type, emoji, this.settings, editor);
 						editor.replaceSelection(output);
 					}
 				} catch (e) {

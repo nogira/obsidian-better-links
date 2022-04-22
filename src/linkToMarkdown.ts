@@ -1,12 +1,13 @@
+import { requestUrl, Editor } from 'obsidian';
 import { tweetsFromURL } from "./twitterAPI";
-import { requestUrl } from 'obsidian';
 import { LinkFormatPluginSettings } from "./../main"
 
 export async function linkToMarkdown(
     inputURL: string,
     type: string,
     emoji: string,
-    settings: LinkFormatPluginSettings
+    settings: LinkFormatPluginSettings,
+    editor: Editor
     ) {
     
     //replace http with https
@@ -21,7 +22,7 @@ export async function linkToMarkdown(
 
     switch (type) {
         case "tweet": {
-            return await getFormattedTweets(inputURL, emoji, doGetArchive);
+            return await getFormattedTweets(inputURL, emoji, doGetArchive, editor);
         }
 
         case "video": {
@@ -76,13 +77,63 @@ export async function linkToMarkdown(
     }
 }
 
-async function getFormattedTweets(inputURL: string, emoji: string, doGetArchive: boolean) {
+async function getFormattedTweets(
+    inputURL: string,
+    emoji: string,
+    doGetArchive: boolean,
+    editor: Editor
+    ) {
+    // obtain indent spacing type/length so know what to use to indent quotes
     const obsidianConfig = app.vault.config; // ignore warning, .config exists
-    let leftSideSpacing;
+    let indent;
     if (obsidianConfig.useTab) {
-        leftSideSpacing = "\t";
+        indent = "\t";
     } else {
-        leftSideSpacing = " ".repeat(obsidianConfig.tabSize);
+        indent = " ".repeat(obsidianConfig.tabSize);
+    }
+
+    // check how many indentations, and if in bullet / quote / etc
+    const cursor = editor.getCursor();
+    const textBeforeCursor = editor.getRange(
+        { line: cursor.line, ch: 0 },
+        cursor
+    );
+    const endsInQuote = /> $/.test(textBeforeCursor);
+    const noIndent = textBeforeCursor === ""
+    // if a bullet, remove the bullet from inserted indentation, but if quote or
+    // nothing, leave the same
+    let indentation = textBeforeCursor.replace(/[-\*] $/, '');
+    // add the indentation TO THE RIGHT
+    // e.g.
+    //     > - 
+    // to 
+    //     > - link
+    //     >     > text
+    // but if end is quote, not bullet, the extra indentation is not added bc 
+    // doesn't format properly
+    //     > 
+    // to 
+    //     > link
+    //     >     > text           <-- DOESNT WORK
+    // THIS INSTEAD:
+    //     > 
+    // to 
+    //     > link
+    //     > > text
+    // this doesn't work either
+    // 
+    // to 
+    // link
+    //     > text           <-- DOESNT WORK
+    // must do this
+    // 
+    // to 
+    // link
+    // > text
+    if (endsInQuote || noIndent) {
+        // none
+    } else {
+        indentation = indentation + indent;
     }
 
     const user = inputURL.split('/')[3];
@@ -131,7 +182,7 @@ async function getFormattedTweets(inputURL: string, emoji: string, doGetArchive:
         // add \ to front of # to prevent obsidian recognizing it as start of tag
         text = text.replace(/#/gm, "\\#");
         // add quote marks to text
-        text = text.replace(/^/gm, `${leftSideSpacing}> `);
+        text = text.replace(/^/gm, `${indentation}> `);
         // remove spaces at end of line
         text = text.replace(/ +?$/gm, "");
         text = translateURLs(text, tweet);
