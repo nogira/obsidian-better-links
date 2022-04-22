@@ -28,7 +28,7 @@ _Note_: It can take a few seconds to load the output. A message will pop-up in t
 
 _(Supports twitter threads too as long as they're not so long they have a "show more" button)_
 
-## 2. Use archived verion of link to prevent deadlinks
+## 2. Use archived version of url to prevent deadlinks
 
 You copy a url, but the url used in the formatted link contains an an archived url instead:
 - Copy: https://realpython.com/python-matplotlib-guide/
