@@ -40,43 +40,6 @@ export default class LinkFormatPlugin extends Plugin {
 	async onload() {
 		await this.loadSettings();
 
-		// this.addCommand({
-		// 	id: 'get-editor',
-		// 	name: 'get editor',
-		// 	hotkeys: [{
-		// 		modifiers: ['Mod'],
-		// 		key: '9',
-		// 	}],
-		// 	editorCallback: async (editor: Editor, view: MarkdownView) => {
-
-		// 		// console.log("editor")
-		// 		// console.log(editor)
-		// 		// console.log("editor.lastLine()")
-		// 		// console.log(editor.lastLine())
-		// 		console.log("editor.getCursor()")
-		// 		console.log(editor.getCursor())
-		// 		// console.log("view")
-		// 		// console.log(view)
-		// 		function getTextBeforeCursor(editor: Editor) {
-		// 			const cursor = editor.getCursor();
-		// 			const textBeforeCursor = editor.getRange(
-		// 				{ line: cursor.line, ch: 0 },
-		// 				cursor
-		// 			);
-		// 			return textBeforeCursor;
-		// 		}
-				
-		// 		console.log("textBeforeCursor")
-		// 		console.log(getTextBeforeCursor(editor))
-
-		// 		// if text before cursur is the same as the full text of the 
-		// 		// line, then it is viable for checking if it's a quote
-
-
-		// 	}
-		// });
-
-
 		this.addCommand({
 			id: 'format-link',
 			name: 'Format link',
@@ -147,14 +110,43 @@ export default class LinkFormatPlugin extends Plugin {
 		// This adds a settings tab so the user can configure various aspects of the plugin
 		this.addSettingTab(new LinkFormatSettingTab(this.app, this));
 
-		// // If the plugin hooks up any global DOM events (on parts of the app that doesn't belong to this plugin)
-		// // Using this function will automatically remove the event listener when this plugin is disabled.
-		// this.registerDomEvent(document, 'click', (evt: MouseEvent) => {
-		// 	console.log('click', evt);
-		// });
-
-		// // When registering intervals, this function will automatically clear the interval when the plugin is disabled.
-		// this.registerInterval(window.setInterval(() => console.log('setInterval'), 5 * 60 * 1000));
+		this.registerEvent(this.app.workspace.on(
+			'editor-paste',
+			(e: ClipboardEvent, editor: Editor, markdownView: MarkdownView) => {
+				// when you paste text, and left is "> ", and right is nothing,
+				// then it will be a quote, so make sure each paragraph pasted 
+				// gets indented and quoted
+				const cursor = editor.getCursor();
+				const textBeforeCursor = editor.getRange(
+					{ line: cursor.line, ch: 0 },
+					cursor
+				);
+				// if text before cursor is the same as the full text of the 
+				// line, then it is viable for checking if it's a quote
+				const cursorIsOnRightEdge = textBeforeCursor === editor.getLine(cursor.line);
+				if (cursorIsOnRightEdge) {
+					const isQuote = textBeforeCursor.match(/> $/);
+					if (isQuote) {
+						e.preventDefault();
+						// --- MODIFY PASTED TEXT BEFORE PASTED ---
+						// IMPORTANTLY THIS DOESNT ACTUALLY CHANGE THE CLIPBOARD 
+						// TEXT, JUST THE CURRENT CLIPBOARD EVENT TEXT
+						const clipboardText = e.clipboardData.getData('text/plain');
+						// add indentation to each line
+						console.log("clipboardText: ", clipboardText);
+						let indentedText = clipboardText.replace(/^/gm, textBeforeCursor)
+						console.log("indentedText1", indentedText);
+						// since above added indentation to first line which 
+						// already has indentation, remove indentation from 
+						// first line
+						indentedText = indentedText.substring(textBeforeCursor.length);
+						console.log(indentedText);
+						console.log("indentedText2", indentedText);
+						editor.replaceSelection(indentedText);
+					}
+				}
+			}
+		));
 	}
 
 	onunload() {
