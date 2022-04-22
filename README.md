@@ -1,24 +1,19 @@
 
 <h1 align="center">
-  Obsidian link formatter
+  Obsidian betters links
 </h1>
 
 
 Plugin for [Obsidian](https://obsidian.md).
 
+## 1. Link formatting
 1. Copy url (e.g. `https://www.youtube.com/watch?v=cdZZpaB2kDM`).
 2. Use hotkey to trigger the `Link formatter: Link format` command.
 3. Output: `📹 [Elon Musk talks Twitter, Tesla and how his brain works — live at TED2022](https://www.youtube.com/watch?v=cdZZpaB2kDM)`
 
-That simple.
-
-<br>
-
 _Note_: It can take a few seconds to load the output. A message will pop-up in the top right of obsidian if the code fails to format the link. This prevents you from waiting unnecessarily for an output that never comes.
 
-<br>
-
-### Formatted link examples:
+#### Formatted link examples:
 
 - 📹 [How to OVER Engineer a Website // What is a Tech Stack?](https://www.youtube.com/watch?v=Sxxw3qtb3_g)
 
@@ -30,6 +25,12 @@ _Note_: It can take a few seconds to load the output. A message will pop-up in t
 
 - 🐦 [@WarronBebster 1442902148551901187](http://web.archive.org/web/20220119063529/https://twitter.com/WarronBebster/status/1442902148551901187)
 	> Some big news — we're partnering with @OpenAI to bring Codex features to @Replit. We're starting today with generated code explanations. Learn more here: https://blog.replit.com/codex
+
+_(Supports twitter threads too as long as they're not so long they have a "show more" button)_
+
+## 2. Multi-paragraph quoting
+
+Usually when you paste multi-paragraph text on a `> `, the first paragraph has the quote, and the quote's indentation, but every paragraph after that have no `> `, nor indentation. This plugin automatically adds it when pasting.
 
 <br>
 
