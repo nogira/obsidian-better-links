@@ -8,12 +8,13 @@ pnpm run dev
 import { App, Editor, MarkdownView, Modal, Notice, Plugin, PluginSettingTab, Setting } from 'obsidian';
 import { linkToMarkdown } from './src/linkToMarkdown.js';
 
+// this creates the object type for the plugin settings
 export interface LinkFormatPluginSettings {
 	archiveLinks: boolean;
-	icons: any; // object of type: icon
-	urls: any; // object of urlMatch: type
+	icons: any; // { type: icon, type: icon, etc }
+	urls: any; // { urlMatch: type, urlMatch: type, etc }
 }
-
+// these are the default values for the plugin settings object
 const DEFAULT_SETTINGS: LinkFormatPluginSettings = {
 	archiveLinks: false,
 	icons: {
@@ -48,9 +49,11 @@ export default class LinkFormatPlugin extends Plugin {
 				// position is not affected by random text
 				editor.replaceSelection('');
 
-				// try-catch so user knows if it fails and doesn't sit around 
-				// waiting 10sec thinking its just taking a long time to load
+				// try-catch with a notification in the catch so user knows if 
+				// it fails and doesn't sit around waiting 10sec thinking its 
+				// just taking a long time to load
 				try {
+					// get the text from the clipboard
 					const inputURL = await navigator.clipboard.readText()
 
 					// CHECK URL IS VALID URL, IF NOT NOTIFY AND END FUNCTION
@@ -106,6 +109,7 @@ export default class LinkFormatPlugin extends Plugin {
 		// This adds a settings tab so the user can configure various aspects of the plugin
 		this.addSettingTab(new LinkFormatSettingTab(this.app, this));
 
+		// trigger event when pasting text in editor
 		this.registerEvent(this.app.workspace.on(
 			'editor-paste',
 			(e: ClipboardEvent, editor: Editor, markdownView: MarkdownView) => {
@@ -164,11 +168,12 @@ export default class LinkFormatPlugin extends Plugin {
 }
 
 class LinkAssignmentModal extends Modal {
+	// type declarations
 	plugin: LinkFormatPlugin;
 	inputURL: string;
-
 	type: string = '';
 
+	// settings initialization values of variables on creation of modal
 	constructor(app: App, plugin: LinkFormatPlugin, inputURL: string) {
 		super(app);
 		this.plugin = plugin;

@@ -1,5 +1,5 @@
 import { requestUrl, Editor } from 'obsidian';
-import { tweetsFromURL } from "./twitterAPI";
+import { getTweetsFromURL } from "./twitterGuestAPI.bundle";
 import { LinkFormatPluginSettings } from "./../main"
 
 export async function linkToMarkdown(
@@ -144,11 +144,11 @@ async function getFormattedTweets(
     if (doGetArchive) {
         [outputURL, tweets] = await Promise.all([
             getArchivedUrl(inputURL),
-            tweetsFromURL(inputURL),
+            getTweetsFromURL(inputURL),
         ]);
     } else {
         outputURL = inputURL;
-        tweets = await tweetsFromURL(inputURL);
+        tweets = await getTweetsFromURL(inputURL);
     }
 
     let tweetOutputText = "";
