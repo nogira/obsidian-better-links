@@ -151,6 +151,11 @@ async function getFormattedTweets(
         tweets = await getTweetsFromURL(inputURL);
     }
 
+    const isTweetThread = tweets.length > 1;
+    if (isTweetThread) {
+        emoji += "🧵";
+    }
+
     let tweetOutputText = "";
     for (const tweet of tweets) {
         let text = tweet.text;
