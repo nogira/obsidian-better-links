@@ -1,5 +1,5 @@
 import { requestUrl, Editor } from 'obsidian';
-import { getTweetsFromURL } from "./twitterGuestAPI.bundle";
+import { urlToTweets } from "./twitterGuestAPI.bundle";
 import { LinkFormatPluginSettings } from "./../main"
 
 export async function linkToMarkdown(
@@ -144,12 +144,14 @@ async function getFormattedTweets(
     if (doGetArchive) {
         [outputURL, tweets] = await Promise.all([
             getArchivedUrl(inputURL),
-            getTweetsFromURL(inputURL),
+            urlToTweets(inputURL),
         ]);
     } else {
         outputURL = inputURL;
-        tweets = await getTweetsFromURL(inputURL);
+        tweets = await urlToTweets(inputURL);
     }
+
+    console.log("ONE");
 
     const isTweetThread = tweets.length > 1;
     if (isTweetThread) {
@@ -184,6 +186,7 @@ async function getFormattedTweets(
             quoteText = translateURLs(quoteText, tweet.quote);
             text += `\n\n${link}\n${quoteText}`;
         }
+        console.log("TWO");
         // add \ to front of # to prevent obsidian recognizing it as start of tag
         text = text.replace(/#/gm, "\\#");
         // add quote marks to text
@@ -193,9 +196,10 @@ async function getFormattedTweets(
         text = translateURLs(text, tweet);
         // (e.g. &amp; -> &)
         text = decodeHtmlEntities(text);
-
+        console.log("THREE");
         tweetOutputText += `\n${text}\n`;
     }
+    console.log("FOUR");
     // -- OLD -- (keep in case twitter API breaks)
     // using outputURL bc cant get title from twitter inputURL to be able to get tweet text
     // const outputURL = await getArchivedUrl(inputURL);
@@ -231,9 +235,9 @@ function decodeHtmlEntities(str: string) {
 
 async function getTitle(url: string) {
     return await requestUrl({url: url})
-        .then(r => r.text)
+        .then((r: any) => r.text)
         // no need to parse whole html just to get title value
-        .then(t => {
+        .then((t: string) => {
             // console.log(t);
             let title = t.match(/(?<=<title[^>]*>)(.*?)(?=<\/title>)/gs)?.[0];
             // console.log(title);
@@ -241,9 +245,12 @@ async function getTitle(url: string) {
             title = title.replace(/\n|\r/g, '');
             // remove whitespace from start and end
             title = title.trim();
+            // &#x27; (') gets wringly replaced with   when decodeHtmlEntities()
+            // is executed, so replace in advance
+            title = title.replace(/&#x27;/g, "'");
             // console.log(title);
             return title;
         })
         // still need to parse html to convert html to text (e.g. &amp; -> &)
-        .then(title => decodeHtmlEntities(title));
+        .then((title: string) => decodeHtmlEntities(title));
 }

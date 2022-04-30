@@ -7,7 +7,7 @@ import { fetch } from "./fetchWrapper"
 const AUTHORIZATION = "Bearer AAAAAAAAAAAAAAAAAAAAANRILgAAAAAAnNwIzUejRCOuH5E6I8xnZz4puTs%3D1Zv7ttfk8LF81IUq16cHjhLTvJu4FA33AGWWjCpTnA";
 const apiBase = "https://twitter.com/i/api/";
 let currentGuestToken = "";
-async function getNewGuestToken() {
+async function newGuestToken() {
     const obj = await fetch("https://api.twitter.com/1.1/guest/activate.json", {
         "method": "POST",
         "credentials": "omit",
@@ -15,11 +15,13 @@ async function getNewGuestToken() {
             "authorization": AUTHORIZATION
         }
     }).then((r)=>r.json()
-    ).catch(()=>""
-    );
+    ).catch(()=>{
+        console.log("Error fetching guest token");
+        return "";
+    });
     return obj?.guest_token;
 }
-async function getUnparsedTweets(tweetID, includeRecommendedTweets = false) {
+async function idToUnparsedTweets(tweetID, includeRecommendedTweets = false) {
     const variables = {
         "focalTweetId": tweetID,
         "with_rux_injections": includeRecommendedTweets,
@@ -41,7 +43,7 @@ async function getUnparsedTweets(tweetID, includeRecommendedTweets = false) {
         "__fs_responsive_web_edit_tweet_api_enabled": false
     };
     let url = apiBase + "graphql/L1DeQfPt7n3LtTvrBqkJ2g/TweetDetail?variables=" + encodeURI(JSON.stringify(variables));
-    let guestToken = currentGuestToken || await getNewGuestToken();
+    let guestToken = currentGuestToken || await newGuestToken();
     let obj;
     for (const i of [
         1,
@@ -56,7 +58,7 @@ async function getUnparsedTweets(tweetID, includeRecommendedTweets = false) {
         }).then((r)=>r.json()
         );
         if (obj.errors) {
-            guestToken = await getNewGuestToken();
+            guestToken = await newGuestToken();
         } else {
             break;
         }
@@ -65,6 +67,10 @@ async function getUnparsedTweets(tweetID, includeRecommendedTweets = false) {
     return tweets;
 }
 function parseTweetContents(tweetContents) {
+    tweetContents = tweetContents.itemContent?.tweet_results?.result || tweetContents.quoted_status_result.result;
+    if (tweetContents === undefined) {
+        return null;
+    }
     const mainTweet = {
         id: tweetContents.legacy.id_str,
         user: tweetContents.core.user_results.result.legacy.screen_name,
@@ -95,60 +101,105 @@ function parseTweetContents(tweetContents) {
     }
     const isQuote = tweetContents?.quoted_status_result;
     if (isQuote) {
-        const quoteContents = tweetContents.quoted_status_result.result;
-        mainTweet.quote = parseTweetContents(quoteContents);
-        mainTweet.quote.url = tweetContents.legacy.quoted_status_permalink;
-        delete mainTweet.quote.url.display;
+        const quote = parseTweetContents(tweetContents);
+        if (quote) {
+            mainTweet.quote = quote;
+            mainTweet.quote.url = tweetContents.legacy.quoted_status_permalink;
+            delete mainTweet.quote.url.display;
+        }
     }
     return mainTweet;
 }
-async function getTweetsFromURL(url) {
+async function urlToTweets(url) {
     const idFromInputURL = url.split("/")[5];
-    const tweetGroups = await getUnparsedTweets(idFromInputURL);
+    const tweetGroups = await idToUnparsedTweets(idFromInputURL);
     const allParsedTweets = [];
-    let i;
-    for(i = 0; i < tweetGroups.length; i++){
-        const entryId = tweetGroups[i].entryId;
-        const id = entryId?.substring(6);
-        if (id === idFromInputURL) {
-            break;
-        }
+    const mainTweetIndex = getMainTweetIndex(tweetGroups, idFromInputURL);
+    const mainTweet = tweetGroupToTweets(tweetGroups[mainTweetIndex]);
+    let nextTweetGroup = [];
+    const nextGroup = tweetGroups[mainTweetIndex + 1];
+    console.log(nextGroup);
+    const isNotShowMore = nextGroup?.content?.itemContent?.cursorType !== "ShowMoreThreadsPrompt";
+    const nextGroupExists = nextGroup && isNotShowMore;
+    if (nextGroupExists) {
+        nextTweetGroup = tweetGroupToTweets(nextGroup);
     }
-    let mainTweetUser;
-    {
-        const tweet = tweetGroups[i];
-        const tweetContents = tweet.content.itemContent.tweet_results.result;
-        const parsedTweet = parseTweetContents(tweetContents);
-        allParsedTweets.push(parsedTweet);
-        mainTweetUser = parsedTweet.user;
-    }
-    const mainIsFirstTweet = i === 0;
-    let prevTweetNotSameUser = true;
-    if (!mainIsFirstTweet) {
-        const prevTweet = tweetGroups[i - 1];
-        const prevTweetContents = prevTweet.content.itemContent.tweet_results.result;
-        const parsedPrevTweet = parseTweetContents(prevTweetContents);
-        const prevTweetUser = parsedPrevTweet.user;
-        prevTweetNotSameUser = prevTweetUser !== mainTweetUser;
-    }
-    if (mainIsFirstTweet || prevTweetNotSameUser) {
-        const tweetThread = tweetGroups[i + 1];
-        const tweetThreadItems = tweetThread.content.items;
-        for (const tweetItem of tweetThreadItems){
-            const tweetContents = tweetItem.item.itemContent.tweet_results?.result;
-            if (tweetContents === undefined) {
-                break;
+    console.log("HERE");
+    if (mainTweetIndex == 0) {
+        allParsedTweets.push(...mainTweet);
+        if (nextTweetGroup) {
+            const thread = nextTweetGroup;
+            if (thread?.[0]?.user === mainTweet[0].user) {
+                allParsedTweets.push(...thread);
             }
-            const parsedTweet = parseTweetContents(tweetContents);
-            if (parsedTweet.user !== allParsedTweets[0].user) {
-                break;
-            }
-            allParsedTweets.push(parsedTweet);
         }
+        return allParsedTweets;
+    }
+    const prevTweetGroup = tweetGroupToTweets(tweetGroups[mainTweetIndex - 1]);
+    const prevTweetIsSameUser = prevTweetGroup[0].user === mainTweet[0].user;
+    if (!prevTweetIsSameUser) {
+        allParsedTweets.push(...mainTweet);
+        if (nextTweetGroup) {
+            const thread = nextTweetGroup;
+            if (thread?.[0]?.user === mainTweet[0].user) {
+                allParsedTweets.push(...thread);
+            }
+        }
+        return allParsedTweets;
+    }
+    if (prevTweetIsSameUser) {
+        allParsedTweets.push(...mainTweet);
     }
     return allParsedTweets;
 }
-async function getUnparsedSearchQueryTweets(query) {
+function getMainTweetIndex(tweetGroups, idFromInputURL) {
+    for(let i = 0; i < tweetGroups.length; i++){
+        const entryId = tweetGroups[i].entryId;
+        const id = entryId?.substring(6);
+        if (id === idFromInputURL) {
+            return i;
+        }
+    }
+    return 0;
+}
+function tweetItemGroupToTweet(tweetContents) {
+    const parsedTweet = parseTweetContents(tweetContents);
+    return parsedTweet;
+}
+function tweetModuleGroupToTweets(tweetContents) {
+    let tweets = [];
+    for (const tweetItem of tweetContents){
+        const tweetContents = tweetItem.item;
+        console.log("tweetContents");
+        console.log(tweetContents);
+        if (tweetContents?.itemContent?.displayTreatment?.actionText === "Show replies") {
+            break;
+        }
+        const parsedTweet = parseTweetContents(tweetContents);
+        if (parsedTweet === null) {
+            break;
+        }
+        tweets.push(parsedTweet);
+    }
+    return tweets;
+}
+function tweetGroupToTweets(tweetGroup) {
+    const returnTweets = [];
+    const contents = tweetGroup.content?.items;
+    if (contents) {
+        const tweets = tweetModuleGroupToTweets(contents);
+        if (tweets) {
+            returnTweets.push(...tweets);
+        }
+    } else {
+        const tweet = tweetItemGroupToTweet(tweetGroup.content);
+        if (tweet) {
+            returnTweets.push(tweet);
+        }
+    }
+    return returnTweets;
+}
+async function queryToUnparsedTweets(query) {
     const params = {
         include_profile_interstitial_type: "1",
         include_blocking: "1",
@@ -199,32 +250,34 @@ async function getUnparsedSearchQueryTweets(query) {
         }).then((r)=>r.json()
         );
         if (obj.errors) {
-            guestToken = await getNewGuestToken();
+            guestToken = await newGuestToken();
         } else {
             break;
         }
     }
-    const tweets = obj.globalObjects;
-    return tweets;
+    const gObj = obj.globalObjects;
+    return [
+        gObj.tweets,
+        gObj.users
+    ];
 }
-async function getSearchQueryTweetsFromQuery(query) {
-    const unparsedTweets = await getUnparsedSearchQueryTweets(query);
-    const allParsedTweets = [];
-    const users = unparsedTweets.users;
-    const userIdToUsername = {};
-    for (const item of Object.keys(users)){
-        userIdToUsername[users[item].id_str] = users[item].screen_name;
+async function queryToTweets(query) {
+    const [tweets, users] = await queryToUnparsedTweets(query);
+    let parsedTweets = [];
+    const userIdToName = {};
+    for(const key in users){
+        const item = users[key];
+        userIdToName[item.id_str] = item.screen_name;
     }
-    const tweets = unparsedTweets.tweets;
-    const tempAllParsedTweets = [];
-    for (const item1 of Object.keys(tweets)){
+    for(const key1 in tweets){
+        const item = tweets[key1];
         const tweet = {
-            id: tweets[item1].id_str,
-            user: userIdToUsername[tweets[item1].user_id_str],
-            text: tweets[item1].full_text,
-            date: tweets[item1].created_at
+            id: item.id_str,
+            user: userIdToName[item.user_id_str],
+            text: item.full_text,
+            date: item.created_at
         };
-        const media = tweets[item1]?.entities?.media;
+        const media = item?.entities?.media;
         if (media) {
             tweet.media = [];
             for (const img of media){
@@ -236,7 +289,7 @@ async function getSearchQueryTweetsFromQuery(query) {
                 tweet.media.push(item);
             }
         }
-        const urls = tweets[item1]?.entities?.urls;
+        const urls = item?.entities?.urls;
         if (urls?.length > 0) {
             tweet.urls = [];
             for (const url of urls){
@@ -247,51 +300,91 @@ async function getSearchQueryTweetsFromQuery(query) {
                 tweet.urls.push(item);
             }
         }
-        const hasQuote = tweets[item1]?.quoted_status_id_str;
+        const hasQuote = item?.quoted_status_id_str;
         if (hasQuote) {
-            tweet.quote = hasQuote;
+            tweet.quotedTweetID = hasQuote;
         }
-        const hasThread = tweets[item1].self_thread;
+        const hasThread = item.self_thread;
         if (hasThread) {
             tweet.isThread = true;
+            tweet.threadID = hasThread.id_str;
         } else {
             tweet.isThread = false;
         }
-        tempAllParsedTweets.push(tweet);
+        const retweetTweetId = item.retweeted_status_id_str;
+        if (retweetTweetId) {
+            tweet.retweetTweetId = retweetTweetId;
+        }
+        parsedTweets.push(tweet);
     }
-    const trackTweetIDsOfAdded = [];
-    for (const tweet of tempAllParsedTweets){
-        if (tweet.quote) {
-            const quotedTweet = tempAllParsedTweets.find((t)=>t.id == tweet.quote
+    const tweetsMinusRetweetDupes = [];
+    const trackRetweets = [];
+    for (const tweet of parsedTweets){
+        const isRetweetItem = tweet.retweetTweetId;
+        if (isRetweetItem) {
+            const id = isRetweetItem;
+            const user = tweet.user;
+            trackRetweets.push([
+                id,
+                user
+            ]);
+        } else {
+            tweetsMinusRetweetDupes.push(tweet);
+        }
+    }
+    parsedTweets = tweetsMinusRetweetDupes;
+    for (const tweet1 of parsedTweets){
+        const matches = trackRetweets.filter((x)=>x[0] === tweet1.id
+        );
+        if (matches) {
+            tweet1.retweetedBy = matches.map((x)=>x[1]
+            );
+        }
+    }
+    const quotedIds = [];
+    let tempTweets = [];
+    for (const tweet2 of parsedTweets){
+        const quotedTweetID = tweet2.quotedTweetID;
+        if (quotedTweetID) {
+            const quotedTweet = parsedTweets.find((t)=>t.id === quotedTweetID
             );
             if (quotedTweet) {
-                tweet.quote = quotedTweet;
-                allParsedTweets.push(tweet);
-                trackTweetIDsOfAdded.push(tweet.id, quotedTweet.id);
+                tweet2.quote = quotedTweet;
+                const queryUsers = query.match(/(?<=from:)([\w]+)/g);
+                const isDiffUser = !queryUsers?.includes(quotedTweet.user);
+                if (isDiffUser) {
+                    quotedIds.push(quotedTweet.id);
+                }
             }
         }
+        tempTweets.push(tweet2);
     }
-    for (const tweet1 of tempAllParsedTweets){
-        if (!trackTweetIDsOfAdded.includes(tweet1.id)) {
-            allParsedTweets.push(tweet1);
+    parsedTweets = tempTweets;
+    tempTweets = [];
+    for (const tweet3 of parsedTweets){
+        if (quotedIds.includes(tweet3.id)) {} else {
+            tempTweets.push(tweet3);
         }
     }
-    return allParsedTweets;
+    parsedTweets = tempTweets;
+    return parsedTweets;
 }
-async function getRecommendedTweetsFromURL(url) {
+async function urlToRecommendedTweets(url) {
     const idFromInputURL = url.split("/")[5];
-    const tweetGroups = await getUnparsedTweets(idFromInputURL, true);
+    const tweetGroups = await idToUnparsedTweets(idFromInputURL, true);
     const allParsedTweets = [];
     let recommendedTweets = tweetGroups[tweetGroups.length - 2].content.items;
     for (const tweet of recommendedTweets){
-        const tweetContents = tweet.item.itemContent.tweet_results.result;
+        const tweetContents = tweet.item;
         const parsedTweet = parseTweetContents(tweetContents);
-        allParsedTweets.push(parsedTweet);
+        if (parsedTweet) {
+            allParsedTweets.push(parsedTweet);
+        }
     }
     return allParsedTweets;
 }
-export { getTweetsFromURL as getTweetsFromURL };
-export { getSearchQueryTweetsFromQuery as getSearchQueryTweetsFromQuery };
-export { getRecommendedTweetsFromURL as getRecommendedTweetsFromURL };
-export { getUnparsedTweets as getUnparsedTweets };
-export { getUnparsedSearchQueryTweets as getUnparsedSearchQueryTweets };
+export { urlToTweets as urlToTweets };
+export { queryToTweets as queryToTweets };
+export { urlToRecommendedTweets as urlToRecommendedTweets };
+export { idToUnparsedTweets as idToUnparsedTweets };
+export { queryToUnparsedTweets as queryToUnparsedTweets };

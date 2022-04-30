@@ -133,15 +133,15 @@ export default class LinkFormatPlugin extends Plugin {
 						// TEXT, JUST THE CURRENT CLIPBOARD EVENT TEXT
 						const clipboardText = e.clipboardData.getData('text/plain');
 						// add indentation to each line
-						console.log("clipboardText: ", clipboardText);
+						// console.log("clipboardText: ", clipboardText);
 						let indentedText = clipboardText.replace(/^/gm, textBeforeCursor)
-						console.log("indentedText1", indentedText);
+						// console.log("indentedText1", indentedText);
 						// since above added indentation to first line which 
 						// already has indentation, remove indentation from 
 						// first line
 						indentedText = indentedText.substring(textBeforeCursor.length);
-						console.log(indentedText);
-						console.log("indentedText2", indentedText);
+						// console.log(indentedText);
+						// console.log("indentedText2", indentedText);
 						editor.replaceSelection(indentedText);
 					}
 				}
