@@ -28,11 +28,11 @@ export async function linkToMarkdown(
         case "video": {
             let title;
             if (/youtube\.com/.test(inputURL)) {
-                const obj = await requestUrl({
-                        url: "https://www.youtube.com/oembed?format=json&url="
+                title = await requestUrl({
+                    url: "https://www.youtube.com/oembed?format=json&url="
                             + inputURL,
-                    }).then(r => r.json);
-                title = obj.title;
+                    }).then(r => r.json)
+                    .then(o => o.title);
             } else {
                 title = await getTitle(inputURL);
             }
@@ -40,21 +40,17 @@ export async function linkToMarkdown(
         }
 
         case "forum": {
-            let title, outputURL;
+            let title: Promise<string> | string = getTitle(inputURL);
+            let outputURL;
             if (doGetArchive) {
-                [title, outputURL] = await Promise.all([
-                    getTitle(inputURL),
-                    getArchivedUrl(inputURL),
-                ]);
+                outputURL = await getArchivedUrl(inputURL);
             } else {
-                title = await getTitle(inputURL);
                 outputURL = inputURL;
             }
-
+            title = await title;
             if (/reddit\.com/.test(inputURL)) {
                 title =  title.replace(/ : \w+$/, '');
             }
-
             return `${emoji} [${title}](${outputURL})`;
         }
 
@@ -62,16 +58,14 @@ export async function linkToMarkdown(
         case "paper":
         default: {
             // console.log("article/paper/default");
-            let title, outputURL;
+            const title = getTitle(inputURL);
+            let outputURL;
             if (doGetArchive) {
-                [title, outputURL] = await Promise.all([
-                    getTitle(inputURL),
-                    getArchivedUrl(inputURL),
-                ]);
+                outputURL = await getArchivedUrl(inputURL);
             } else {
-                title = await getTitle(inputURL);
                 outputURL = inputURL;
             }
+            await title;
             return `${emoji} [${title}](${outputURL})`;
         }
     }
@@ -140,18 +134,16 @@ async function getFormattedTweets(
     const id = inputURL.split('/')[5];
     
     // -- NEW --
-    let outputURL, tweets;
+    let tweets: Promise<any[]> | any[] = urlToTweets(inputURL);
+    let outputURL;
     if (doGetArchive) {
-        [outputURL, tweets] = await Promise.all([
-            getArchivedUrl(inputURL),
-            urlToTweets(inputURL),
-        ]);
+        outputURL = await getArchivedUrl(inputURL);
     } else {
         outputURL = inputURL;
-        tweets = await urlToTweets(inputURL);
     }
+    tweets = await tweets;
 
-    console.log("ONE");
+    // console.log("ONE");
 
     const isTweetThread = tweets.length > 1;
     if (isTweetThread) {
