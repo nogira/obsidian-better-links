@@ -58,14 +58,15 @@ export async function linkToMarkdown(
         case "paper":
         default: {
             // console.log("article/paper/default");
-            const title = getTitle(inputURL);
+            let title: Promise<string> | string = getTitle(inputURL);
             let outputURL;
             if (doGetArchive) {
                 outputURL = await getArchivedUrl(inputURL);
             } else {
                 outputURL = inputURL;
             }
-            await title;
+            title = await title;
+
             return `${emoji} [${title}](${outputURL})`;
         }
     }
@@ -143,7 +144,7 @@ async function getFormattedTweets(
     }
     tweets = await tweets;
 
-    // console.log("ONE");
+    console.log("ONE");
 
     const isTweetThread = tweets.length > 1;
     if (isTweetThread) {
